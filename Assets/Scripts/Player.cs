@@ -16,22 +16,26 @@ public class Player : MonoBehaviour
     // Cached component references
     Rigidbody2D myRigidBody;
     Animator myAnimator;
-    Collider2D myCollider2D;
+    CapsuleCollider2D myBodyCollider;
+    BoxCollider2D myFeetCollider;
+    float gravityScaleAtStart;
 
     // Start is called before the first frame update
     void Start()
     {
         myRigidBody = GetComponent<Rigidbody2D>(); // Gets the component rigid body from the player object
-	myAnimator = GetComponent<Animator>();
-	myCollider2D = GetComponent<Collider2D>();
+	    myAnimator = GetComponent<Animator>();
+	    myBodyCollider = GetComponent<CapsuleCollider2D>();
+        myFeetCollider = GetComponent<BoxCollider2D>();
+        gravityScaleAtStart = myRigidBody.gravityScale;
     }
 
     // Update is called once per frame
     void Update()
     {
         Run();
-	Jump();
-	ClimbLadder();
+	    Jump();
+	    ClimbLadder();
         FlipSprite();
     }
 
@@ -40,37 +44,38 @@ public class Player : MonoBehaviour
         float controlThrow = Input.GetAxis("Horizontal"); // -1 to +1
         Vector2 playerVelocity = new Vector2(controlThrow * runSpeed, myRigidBody.velocity.y); // Creates a vector
         myRigidBody.velocity = playerVelocity;
-	if(myRigidBody.velocity.x != 0){
-	    myAnimator.SetBool("Running", true);
-	}else{
-	    myAnimator.SetBool("Running", false);
-	}
+	    if(myRigidBody.velocity.x != 0){
+	        myAnimator.SetBool("Running", true);
+	    }else{
+	        myAnimator.SetBool("Running", false);
+	    }
         
     }
     private void Jump()
     {
-	if(myCollider2D.IsTouchingLayers(LayerMask.GetMask("Ground"))){ 
-	    if(Input.GetButtonDown("Jump"))
-	    {
-	        Vector2 jumpVelocityToAdd = new Vector2(0f, jumpSpeed);
-	        myRigidBody.velocity += jumpVelocityToAdd;
+	    if(myFeetCollider.IsTouchingLayers(LayerMask.GetMask("Ground"))){ 
+	        if(Input.GetButtonDown("Jump"))
+	        {
+	            Vector2 jumpVelocityToAdd = new Vector2(0f, jumpSpeed);
+	            myRigidBody.velocity += jumpVelocityToAdd;
+	        }
 	    }
-	}
-	
-
     }
     private void ClimbLadder()
     {
-	if(myCollider2D.IsTouchingLayers(LayerMask.GetMask("Ladder"))){
-	    myAnimator.SetBool("Climbing", true);
-	    float controlFlow = Input.GetAxis("Vertical");
-	    Vector2 playerVelocity = new Vector2(myRigidBody.velocity.x, controlFlow * climbSpeed);
-            myRigidBody.velocity = playerVelocity;
-	    
+	    if(myFeetCollider.IsTouchingLayers(LayerMask.GetMask("Ladder"))){
+            myRigidBody.gravityScale = 0f;
 
-	}else{
-	    myAnimator.SetBool("Climbing", false);
-	}
+            myAnimator.SetBool("Climbing", true);
+            float controlFlow = Input.GetAxis("Vertical");
+            Vector2 playerVelocity = new Vector2(myRigidBody.velocity.x, controlFlow * climbSpeed);
+            myRigidBody.velocity = playerVelocity;
+            
+        }
+        else{
+            myRigidBody.gravityScale = gravityScaleAtStart;
+	        myAnimator.SetBool("Climbing", false);
+	    }
 
     }
     private void FlipSprite()
